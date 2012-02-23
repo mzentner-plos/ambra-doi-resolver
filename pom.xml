@@ -3,16 +3,60 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.ambraproject</groupId>
   <artifactId>ambra-doi-resolver</artifactId>
-  <version>2.2.2-SNAPSHOT</version>
+  <version>1.0-SNAPSHOT</version>
   <packaging>war</packaging>
-  <name>AmbraDOI Resolver</name>
+  <name>Ambra DOI Resolver</name>
+  
+  <repositories>
+    <repository>
+      <id>ja-sig</id>
+      <url>http://developer.ja-sig.org/maven2</url>
+    </repository>
+    <repository>
+      <id>ambra</id>
+      <name>Maven 2 Release Repository for Ambra</name>
+      <url>http://maven.ambraproject.org/maven2/release/</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>ambra.snapshot</id>
+      <name>Maven 2 Snapshot Repository for Ambra</name>
+      <url>http://maven.ambraproject.org/maven2/snapshot/</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>central</id>
+      <name>Maven Repository Switchboard</name>
+      <layout>default</layout>
+      <url>http://repo1.maven.org/maven2</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
 
-  <parent>
-    <groupId>org.ambraproject</groupId>
-    <artifactId>ambra</artifactId>
-    <version>2.2.2-SNAPSHOT</version>
-  </parent>
+  <scm>
+    <developerConnection>scm:svn:http://ambraproject.org/svn/ambra/ambra-doi-resolver/head/</developerConnection>
+    <connection>scm:svn:http://ambraproject.org/svn/ambra/ambra-doi-resolver/head/</connection>
+    <url>http://www.ambraproject.org/trac/browser/ambra/head/</url>
+  </scm>
 
+  <properties>
+    <spring.version>2.5.6.SEC01</spring.version>
+    <slf4j.version>1.6.1</slf4j.version>
+    <mysql-connector-java.version>5.1.9</mysql-connector-java.version>
+  </properties>
+  
   <dependencies>
     <dependency>
       <groupId>org.springframework</groupId>
@@ -59,6 +103,7 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>conf-helper</artifactId>
+      <version>2.2.1</version>
       <exclusions>
         <exclusion>
           <groupId>commons-logging</groupId>
@@ -70,16 +115,19 @@
     <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>servlet-api</artifactId>
+      <version>2.4</version>
     </dependency>
 
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
+      <version>${slf4j.version}</version>
     </dependency>
 
     <dependency>
@@ -96,6 +144,7 @@
     <dependency>
       <groupId>commons-configuration</groupId>
       <artifactId>commons-configuration</artifactId>
+      <version>1.6</version>
       <exclusions>
         <exclusion>
           <groupId>commons-logging</groupId>
@@ -109,12 +158,50 @@
       <artifactId>testng</artifactId>
       <classifier>jdk15</classifier>
       <scope>test</scope>
+      <version>5.7</version>
     </dependency>
-
   </dependencies>
+  
+  <distributionManagement>
+    <repository>
+      <id>ambra</id>
+      <url>scp://maven.ambraproject.org/home/maven2/repository/release</url>
+    </repository>
+    <snapshotRepository>
+      <id>ambra.snapshot</id>
+      <url>scp://maven.ambraproject.org/home/maven2/repository/snapshot</url>
+      <uniqueVersion>false</uniqueVersion>
+    </snapshotRepository>
+    <site>
+      <id>ambra.javadoc</id>
+      <!-- This is where the site-deploy phase will put the documentation -->
+      <url>scp://maven.ambraproject.org/home/maven2/javadoc</url>
+    </site>
+  </distributionManagement>
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.5</source>
+          <target>1.5</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>2.2.2</version>
+        <configuration>
+          <goals>deploy</goals>                           <!-- disable site deploy -->
+          <useReleaseProfile>false</useReleaseProfile>    <!-- no javadoc and source jars -->
+          <tagBase>http://ambraproject.org/svn/ambra/ambra-doi-resolver/tags</tagBase>
+          <autoVersionSubmodules>true</autoVersionSubmodules>
+          <preparationGoals>clean install</preparationGoals>
+          <arguments>-Ppackages,distribution,release</arguments>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 </project>
