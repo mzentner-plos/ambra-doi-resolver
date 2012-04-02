@@ -32,20 +32,11 @@ public interface ResolverDAOService {
   public boolean doiIsArticle(String doi);
 
   /**
-   * Determine if the given doi corresponds to an annotation
+   * Return information about the specified annotation, or null if the given doi does not correspond to an annotation
+   *
    *
    * @param doi the doi to look up
-   * @return true if the given doi corresponds to an ambra annotation, false otherwise
+   * @return info about the annotation to which the given doi corresponds, or null if there is no such annotation
    */
-  public boolean doiIsAnnotation(String doi);
-
-  /**
-   * Get the root doi that is annotated by the given annotation doi.  e.g. if the given doi is a comment on an article,
-   * return the article doi.  If it annotates a comment on an article, return the article.
-   *
-   * @param doi the annotation doi
-   * @return the resource that is annotated by the annotation doi
-   * @throws AnnotationLoopException in case there is a loop among the annotations
-   */
-  public String getAnnotatedRoot(String doi) throws AnnotationLoopException;
+  public AnnotationInfo getAnnotationInfo(String doi);
 }

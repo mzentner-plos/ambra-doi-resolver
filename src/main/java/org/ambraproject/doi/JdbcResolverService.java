@@ -21,13 +21,13 @@ package org.ambraproject.doi;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 
 /**
@@ -45,7 +45,7 @@ public class JdbcResolverService implements ResolverDAOService {
 
   @Override
   public boolean doiIsArticle(String doi) {
-    log.debug("looking up doi " + doi + " in Article table");
+    log.debug("looking up doi {} in Article table", doi);
     int count = jdbcTemplate
         .queryForInt("select count(*) from article where doi = ?",
             new Object[]{doi});
@@ -53,34 +53,28 @@ public class JdbcResolverService implements ResolverDAOService {
   }
 
   @Override
-  public boolean doiIsAnnotation(String doi) {
-    log.debug("looking up doi " + doi + " in Annotation table");
-    int count = jdbcTemplate
-        .queryForInt("select count(*) from Annotation where annotationUri = ?",
-            new Object[]{doi});
-    return count != 0;
-  }
-
-  @Override
-  public String getAnnotatedRoot(String doi) throws AnnotationLoopException {
-    //Keep track of previously visited dois so we don't end up in an infinite loop
-    return loopSafeGetAnnotatedRoot(doi, new HashSet<String>());
-  }
-
-  @SuppressWarnings("unchecked")
-  private String loopSafeGetAnnotatedRoot(String doi, Set<String> previousDois) throws AnnotationLoopException {
-    List<Map> results = jdbcTemplate.queryForList(
-        "select annotates from Annotation where annotationUri = ?",
-        new Object[]{doi}
-    );
-    String annotates;
-    if (results.size() == 0 || (annotates = (String) results.get(0).get("ANNOTATES")) == null) {
-      return doi;
-    } else if (previousDois.contains(annotates)) {
-      throw new AnnotationLoopException(previousDois);
-    } else {
-      previousDois.add(annotates);
-      return loopSafeGetAnnotatedRoot(annotates, previousDois);
+  public AnnotationInfo getAnnotationInfo(String doi) {
+    log.debug("looking up doi {} in Annotation table", doi);
+    try {
+      return (AnnotationInfo) jdbcTemplate.query(
+          "select an.annotationID, a.doi, an.type from annotation an " +
+              " inner join article a on an.articleID = a.articleID " +
+              " where an.annotationURI = ?",
+          new Object[]{doi},
+          new RowMapper() {
+            @Override
+            public Object mapRow(ResultSet rs, int rowNum) throws SQLException {
+              return new AnnotationInfo(
+                  rs.getLong(1), //annotationId
+                  rs.getString(2), //article doi
+                  rs.getString(3) //type
+              );
+            }
+          }).get(0);
+    } catch (IndexOutOfBoundsException e) {
+      //no annotation
+      return null;
     }
   }
+
 }

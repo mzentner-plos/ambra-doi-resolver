@@ -158,42 +158,6 @@ public class ResolverServlet extends HttpServlet {
     failWithError(resp);
   }
 
-  private boolean doiIsArticle(String doi) {
-    URI doiURI;
-    //Check that the doi is well-formed
-    try {
-      doiURI = new URI(INFO_DOI_PREFIX + doi);
-    } catch (URISyntaxException use) {
-      log.warn("Couldn't create URI for doi:" + doi, use);
-      return false;
-    }
-
-    try {
-      return resolverDAOService.doiIsArticle(doiURI.toString());
-    } catch (Exception e) {
-      log.error("Error checking type for " + doiURI.toString(), e);
-      return false;
-    }
-  }
-
-  private boolean doiIsAnnotation(String doi) {
-    URI doiURI;
-    //Check that the doi is well-formed
-    try {
-      doiURI = new URI(INFO_DOI_PREFIX + doi);
-    } catch (URISyntaxException use) {
-      log.warn("Couldn't create URI for doi:" + doi, use);
-      return false;
-    }
-
-    try {
-      return resolverDAOService.doiIsAnnotation(doiURI.toString());
-    } catch (Exception e) {
-      log.error("Error checking type for " + doiURI.toString(), e);
-      return false;
-    }
-  }
-
   private String constructURL(String doi) {
     StringBuilder redirectURL;
 
@@ -201,6 +165,7 @@ public class ResolverServlet extends HttpServlet {
     Pattern figureRegEx;
     Pattern repRegEx;
 
+    //use regexes to check for each journal if the doi is an article, figure, or representation from that journal
     for (int i = 0; i < numJournals; i++) {
       journalRegEx = journalRegExs[i];
       figureRegEx = figureRegExs[i];
@@ -277,32 +242,57 @@ public class ResolverServlet extends HttpServlet {
       }
     }
 
-    String doiUriStr = INFO_DOI_PREFIX + doi;
+    //the doi didn't match any journal regexes, let's check if it's an annotation
 
-    if (doiIsAnnotation(doi)) {
-      try {
-        String annotatedRoot = resolverDAOService.getAnnotatedRoot(doiUriStr);
-        String rootUri = matchDoiToJournal(annotatedRoot);
-
-        if (rootUri != null) {
-          StringBuilder urlBuf = new StringBuilder(rootUri);
-          urlBuf.append(myConfig.getString("ambra.platform.annotationAction")).
-              append(URLEncoder.encode(doiUriStr, "UTF-8"));
-
-          return urlBuf.toString();
+    String fullDoi = INFO_DOI_PREFIX + doi;
+    try {
+      AnnotationInfo annotationInfo = resolverDAOService.getAnnotationInfo(fullDoi);
+      if (annotationInfo != null) {
+        //found the doi in the annotation table
+        String journalUrl = matchDoiToJournal(annotationInfo.getArticleDoi());
+        String action;
+        if (annotationInfo.getAnnotationType().equals("Rating")) {
+          action = myConfig.getString("ambra.platform.ratingAction")
+              .replaceFirst("%DOI%", annotationInfo.getArticleDoi())
+              .replaceFirst("%ID%", annotationInfo.getAnnotationId().toString());
+        } else {
+          action = myConfig.getString("ambra.platform.annotationAction")
+              .replaceFirst("%ID%", annotationInfo.getAnnotationId().toString());
         }
-      } catch (Exception e) {
-        log.error("Exception occurred attempting to resolve doi '" + doiUriStr + "' to an annotation", e);
+        return journalUrl + action;
 
+      } else {
+        //doi wasn't in the annotation table
+        log.info("Could not resolve uri {} to an annotation", fullDoi);
         return errorPage;
       }
+    } catch (Exception e) {
+      log.error("Error resolving " + fullDoi + " to an annotation", e);
+      return errorPage;
     }
-
-    log.debug("Could not match: {}; redirecting to: {}", doiUriStr, errorPage);
-
-    return errorPage;
   }
 
+  /**
+   * Check if a doi is an article, catching all exceptions
+   *
+   * @param doi the doi to look up
+   * @return true if the doi is an article, false if it's not or an exception occured
+   */
+  private boolean doiIsArticle(String doi) {
+    try {
+      return resolverDAOService.doiIsArticle(INFO_DOI_PREFIX + doi);
+    } catch (Exception e) {
+      log.error("Error checking type for doi: " + doi, e);
+      return false;
+    }
+  }
+
+  /**
+   * Return the base journal url for the doi
+   *
+   * @param doi the doi to look up
+   * @return the base journal url to which the doi belongs
+   */
   private String matchDoiToJournal(String doi) {
     if (doi.startsWith(INFO_DOI_PREFIX)) {
       doi = doi.substring(INFO_DOI_PREFIX.length());

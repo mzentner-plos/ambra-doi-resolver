@@ -20,7 +20,6 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletConfig;
-import org.springframework.mock.web.MockServletContext;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -59,10 +58,12 @@ public class ResolverServletTest extends BaseResolverTest {
 
   @DataProvider(name = "dois")
   public Object[][] getDois() {
-    insertArticleRow("info:doi/10.1371/ambr.1234567");
-    insertArticleRow("info:doi/10.1371/ovrj.v06.i09");
-    insertArticleRow("info:doi/10.1371/ovrj.1234567");
-    insertAnnotationRow("info:doi/10.1371/test-annotation", "info:doi/10.1371/ovrj.1234567");
+    //start at 100 so we don't conflict with the DAO service test ids
+    insertArticleRow(101, "info:doi/10.1371/ambr.1234567");
+    insertArticleRow(102, "info:doi/10.1371/ovrj.v06.i09");
+    insertArticleRow(103, "info:doi/10.1371/ovrj.1234567");
+    insertAnnotationRow(101, "info:doi/10.1371/test-annotation", 103, "Reply");
+    insertAnnotationRow(102, "info:doi/10.1371/test-rating", 101, "Rating");
 
     MockHttpServletRequest article1 = new MockHttpServletRequest();
     article1.setPathInfo("/10.1371/ambr.1234567");
@@ -82,6 +83,9 @@ public class ResolverServletTest extends BaseResolverTest {
     MockHttpServletRequest annotation = new MockHttpServletRequest();
     annotation.setPathInfo("%2F10.1371%2Ftest-annotation");
 
+    MockHttpServletRequest rating = new MockHttpServletRequest();
+    rating.setPathInfo("%2F10.1371%2Ftest-rating");
+
     return new Object[][]{
         {article1, FIRST_JOURNAL_URL + "article/info%3Adoi%2F10.1371%2Fambr.1234567"},
         {encodedArticle1, FIRST_JOURNAL_URL + "article/info%3Adoi%2F10.1371%2Fambr.1234567"},
@@ -90,7 +94,8 @@ public class ResolverServletTest extends BaseResolverTest {
         {article2, SECOND_JOURNAL_URL + "article/info%3Adoi%2F10.1371%2Fovrj.v06.i09"},
         {representation, SECOND_JOURNAL_URL + "article/fetchObjectAttachment.action?" +
             "uri=info%3Adoi%2F10.1371%2Fovrj.1234567&representation=PDF"},
-        {annotation, SECOND_JOURNAL_URL + "annotation/info%3Adoi%2F10.1371%2Ftest-annotation"}
+        {annotation, SECOND_JOURNAL_URL + "annotation/listThread.action?root=101"},
+        {rating, FIRST_JOURNAL_URL + "rate/getArticleRatings.action?articleURI=info:doi/10.1371/ambr.1234567#102" }
     };
   }
 

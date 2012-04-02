@@ -34,13 +34,6 @@
     </aliases>
 
     <services>
-      <database>
-        <driver>org.hsqldb.jdbcDriver</driver>
-        <url>jdbc:hsqldb:mem:testdb</url>
-        <username>sa</username>
-        <password></password>
-      </database>
-
       <doiResolver>
         <!-- 
           This is used to define which DOI regular expression maps to which URL in the DOI  resolver.
@@ -64,5 +57,11 @@
         </mappings>
       </doiResolver>
     </services>
+    <network>
+      <platform>
+        <annotationAction>annotation/listThread.action?inReplyTo=%ID%</annotationAction>
+        <ratingAction>rate/getArticleRatings.action?articleURI=%DOI%#%ID%</ratingAction>
+      </platform>
+    </network>
   </ambra>
 </config>
