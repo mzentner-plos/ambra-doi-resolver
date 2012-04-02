@@ -1,5 +1,5 @@
 /* $HeadURL:: $
- * $Id: JdbcResolverService.java 10266 2012-02-09 19:41:41Z akudlick $
+ * $Id$
  *
  * Copyright (c) 2006-2010 by Public Library of Science
  * http://plos.org
