@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.topazproject.ambra.doi;
+package org.ambraproject.doi;
 
 /**
  * Service Bean for the {@link ResolverServlet}.  Performs operations for which database access is needed

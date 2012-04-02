@@ -23,7 +23,7 @@
     <property name="jndiName" value="java:comp/env/jdbc/AmbraDS"/>
   </bean>
 
-  <bean class="org.topazproject.ambra.doi.JdbcResolverService" id="resolverDAOService">
+  <bean class="org.ambraproject.doi.JdbcResolverService" id="resolverDAOService">
     <constructor-arg ref="dataSource"/>
   </bean>
   <!--This bean exports the DAO Service to the servlet context, so it's accessible within the servlet -->

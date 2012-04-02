@@ -32,7 +32,7 @@
 
   <servlet>
     <servlet-name>DoiResolver</servlet-name>
-    <servlet-class>org.topazproject.ambra.doi.ResolverServlet</servlet-class>
+    <servlet-class>org.ambraproject.doi.ResolverServlet</servlet-class>
   </servlet>
 
   <servlet-mapping>

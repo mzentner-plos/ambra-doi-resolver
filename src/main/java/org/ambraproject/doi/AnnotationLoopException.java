@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.topazproject.ambra.doi;
+package org.ambraproject.doi;
 
 import java.util.Arrays;
 import java.util.Set;

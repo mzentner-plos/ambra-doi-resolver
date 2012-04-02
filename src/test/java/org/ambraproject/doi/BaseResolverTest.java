@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.topazproject.ambra.doi;
+package org.ambraproject.doi;
 
 import org.apache.commons.dbcp.BasicDataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
