@@ -18,12 +18,9 @@ package org.ambraproject.doi;
 
 import org.apache.commons.dbcp.BasicDataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
-import sun.reflect.annotation.AnnotationType;
 
 import javax.sql.DataSource;
-import java.util.Random;
 
 /**
  * Base class for DOI resolver tests. Creates an empty tables with two tables: Article and Annotations.  Access to the
@@ -37,7 +34,6 @@ public class BaseResolverTest {
   protected DataSource dataSource;
 
   private JdbcTemplate jdbcTemplate;
-  private Random random = new Random();
 
   @BeforeClass
   public void createDB() {
