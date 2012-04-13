@@ -61,6 +61,7 @@ public class ResolverServlet extends HttpServlet {
 
   private Pattern[] journalRegExs;
   private Pattern[] figureRegExs;
+  private Pattern[] figureAnchorRegExs;
   private Pattern[] repRegExs;
   private String[] urls;
   private int numJournals;
@@ -76,6 +77,7 @@ public class ResolverServlet extends HttpServlet {
     numJournals = myConfig.getList("ambra.services.doiResolver.mappings.journalMapping.url").size();
     urls = new String[numJournals];
     figureRegExs = new Pattern[numJournals];
+    figureAnchorRegExs = new Pattern[numJournals];
     journalRegExs = new Pattern[numJournals];
     repRegExs = new Pattern[numJournals];
 
@@ -89,6 +91,11 @@ public class ResolverServlet extends HttpServlet {
       pat = new StringBuilder("/").append(myConfig.
           getString("ambra.services.doiResolver.mappings.journalMapping(" + i + ").figureRegex"));
       figureRegExs[i] = Pattern.compile(pat.toString());
+
+      pat = new StringBuilder(".*(").append(myConfig.
+          getString("ambra.services.doiResolver.mappings.journalMapping(" + i + ").figureAnchorRegex"))
+      .append(")");
+      figureAnchorRegExs[i] = Pattern.compile(pat.toString());
 
       pat = new StringBuilder("/").append(myConfig.
           getString("ambra.services.doiResolver.mappings.journalMapping(" + i + ").repRegex"));
@@ -163,12 +170,14 @@ public class ResolverServlet extends HttpServlet {
 
     Pattern journalRegEx;
     Pattern figureRegEx;
+    Pattern figureAnchorRegEx;
     Pattern repRegEx;
 
     //use regexes to check for each journal if the doi is an article, figure, or representation from that journal
     for (int i = 0; i < numJournals; i++) {
       journalRegEx = journalRegExs[i];
       figureRegEx = figureRegExs[i];
+      figureAnchorRegEx = figureAnchorRegExs[i];
       repRegEx = repRegExs[i];
 
       if (journalRegEx.matcher(doi).matches()) {
@@ -197,10 +206,23 @@ public class ResolverServlet extends HttpServlet {
         String possibleArticleDOI = doi.substring(0, doi.length() - 5);
 
         if (doiIsArticle(possibleArticleDOI)) {
-          redirectURL = new StringBuilder(urls[i]);
-          redirectURL.append(myConfig.getString("ambra.platform.figureAction1")).append(INFO_DOI_PREFIX).
-              append(possibleArticleDOI).append(myConfig.getString("ambra.platform.figureAction2")).
-              append(INFO_DOI_PREFIX).append(doi);
+
+          try {
+            redirectURL = new StringBuilder(urls[i])
+                .append(myConfig.getString("ambra.platform.articleAction"))
+                .append(URLEncoder.encode(INFO_DOI_PREFIX,"UTF-8"))
+                .append(URLEncoder.encode(possibleArticleDOI,"UTF-8"))
+                .append('#').append(
+                    //remove everything but the figure anchor id
+                    //e.g. 10.1371/journal.pone.001234.g002 => pone-001234-g001
+                    doi.replaceAll(figureAnchorRegEx.pattern(),"$1").replaceAll("\\.","-")
+                );
+          } catch (UnsupportedEncodingException e) {
+            redirectURL  = new StringBuilder(urls[i])
+                .append(myConfig.getString("ambra.platform.articleAction"))
+                .append(INFO_DOI_PREFIX).append(possibleArticleDOI)
+                .append('#').append(doi.replaceAll(figureAnchorRegEx.pattern(),"$1").replaceAll("\\.","-"));
+          }
 
           log.debug("Matched: {}; redirecting to: {}", doi, redirectURL);
 

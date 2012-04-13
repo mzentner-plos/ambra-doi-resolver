@@ -89,8 +89,7 @@ public class ResolverServletTest extends BaseResolverTest {
     return new Object[][]{
         {article1, FIRST_JOURNAL_URL + "article/info%3Adoi%2F10.1371%2Fambr.1234567"},
         {encodedArticle1, FIRST_JOURNAL_URL + "article/info%3Adoi%2F10.1371%2Fambr.1234567"},
-        {figure, FIRST_JOURNAL_URL + "article/slideshow.action?uri=info:doi/10.1371/ambr.1234567" +
-            "&imageURI=info:doi/10.1371/ambr.1234567.g001"},
+        {figure, FIRST_JOURNAL_URL + "article/info%3Adoi%2F10.1371%2Fambr.1234567#ambr-1234567-g001"},
         {article2, SECOND_JOURNAL_URL + "article/info%3Adoi%2F10.1371%2Fovrj.v06.i09"},
         {representation, SECOND_JOURNAL_URL + "article/fetchObjectAttachment.action?" +
             "uri=info%3Adoi%2F10.1371%2Fovrj.1234567&representation=PDF"},
