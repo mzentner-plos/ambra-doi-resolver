@@ -46,14 +46,12 @@
             <url>http://ambrajournal.example.org/</url>
             <regex>10\.1371/ambr\.\d{7}</regex>
             <figureRegex>10\.1371/ambr\.\d{7}\.[gt]\d{3}</figureRegex>
-            <figureAnchorRegex>ambr\.\d{7}\.[gt]\d{3}</figureAnchorRegex>
             <repRegex>10\.1371/ambr\.\d{7}\.(pdf|xml)</repRegex>
           </journalMapping>
           <journalMapping>
             <url>http://overlayjournal.example.org/</url>
             <regex>10\.1371/ovrj\.(\d{7}|v\d\d\.i\d\d)</regex>
             <figureRegex>10\.1371/ovrj\.(\d{7}|v\d\d\.i\d\d)\.[gt]\d{3}</figureRegex>
-            <figureAnchorRegex>ambr\.\d{7}\.[gt]\d{3}</figureAnchorRegex>
             <repRegex>10\.1371/ovrj\.\d{7}\.(pdf|xml)</repRegex>
           </journalMapping>
         </mappings>

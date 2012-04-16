@@ -58,10 +58,18 @@ public class ResolverServlet extends HttpServlet {
   private static final Logger log = LoggerFactory.getLogger(ResolverServlet.class);
   private static final Configuration myConfig = ConfigurationStore.getInstance().getConfiguration();
   private static final String INFO_DOI_PREFIX = myConfig.getString("ambra.aliases.doiPrefix");
+  /**
+   * Length of the part of the doi that composes the representation anchor id. e.g. pone.0035480.t001.
+   */
+  public static final int REP_ANCHOR_LENGTH = 17;
+  /**
+   * Length of the string at the end of a representation doi that is appended to the owning article's doi.  E.g. the
+   * .t001 of 10.1371/journal.pone.0035480.t001
+   */
+  public static final int REP_END_LENGTH = 5;
 
   private Pattern[] journalRegExs;
   private Pattern[] figureRegExs;
-  private Pattern[] figureAnchorRegExs;
   private Pattern[] repRegExs;
   private String[] urls;
   private int numJournals;
@@ -77,7 +85,6 @@ public class ResolverServlet extends HttpServlet {
     numJournals = myConfig.getList("ambra.services.doiResolver.mappings.journalMapping.url").size();
     urls = new String[numJournals];
     figureRegExs = new Pattern[numJournals];
-    figureAnchorRegExs = new Pattern[numJournals];
     journalRegExs = new Pattern[numJournals];
     repRegExs = new Pattern[numJournals];
 
@@ -91,11 +98,6 @@ public class ResolverServlet extends HttpServlet {
       pat = new StringBuilder("/").append(myConfig.
           getString("ambra.services.doiResolver.mappings.journalMapping(" + i + ").figureRegex"));
       figureRegExs[i] = Pattern.compile(pat.toString());
-
-      pat = new StringBuilder(".*(").append(myConfig.
-          getString("ambra.services.doiResolver.mappings.journalMapping(" + i + ").figureAnchorRegex"))
-      .append(")");
-      figureAnchorRegExs[i] = Pattern.compile(pat.toString());
 
       pat = new StringBuilder("/").append(myConfig.
           getString("ambra.services.doiResolver.mappings.journalMapping(" + i + ").repRegex"));
@@ -170,14 +172,12 @@ public class ResolverServlet extends HttpServlet {
 
     Pattern journalRegEx;
     Pattern figureRegEx;
-    Pattern figureAnchorRegEx;
     Pattern repRegEx;
 
     //use regexes to check for each journal if the doi is an article, figure, or representation from that journal
     for (int i = 0; i < numJournals; i++) {
       journalRegEx = journalRegExs[i];
       figureRegEx = figureRegExs[i];
-      figureAnchorRegEx = figureAnchorRegExs[i];
       repRegEx = repRegExs[i];
 
       if (journalRegEx.matcher(doi).matches()) {
@@ -203,25 +203,29 @@ public class ResolverServlet extends HttpServlet {
       }
 
       if (figureRegEx.matcher(doi).matches()) {
-        String possibleArticleDOI = doi.substring(0, doi.length() - 5);
+        String possibleArticleDOI = doi.substring(0, doi.length() - REP_END_LENGTH);
 
         if (doiIsArticle(possibleArticleDOI)) {
 
           try {
             redirectURL = new StringBuilder(urls[i])
                 .append(myConfig.getString("ambra.platform.articleAction"))
-                .append(URLEncoder.encode(INFO_DOI_PREFIX,"UTF-8"))
-                .append(URLEncoder.encode(possibleArticleDOI,"UTF-8"))
+                .append(URLEncoder.encode(INFO_DOI_PREFIX, "UTF-8"))
+                .append(URLEncoder.encode(possibleArticleDOI, "UTF-8"))
                 .append('#').append(
                     //remove everything but the figure anchor id
                     //e.g. 10.1371/journal.pone.001234.g002 => pone-001234-g001
-                    doi.replaceAll(figureAnchorRegEx.pattern(),"$1").replaceAll("\\.","-")
+                    doi.substring(doi.length() - REP_ANCHOR_LENGTH).replaceAll("\\.", "-")
                 );
           } catch (UnsupportedEncodingException e) {
-            redirectURL  = new StringBuilder(urls[i])
+            redirectURL = new StringBuilder(urls[i])
                 .append(myConfig.getString("ambra.platform.articleAction"))
                 .append(INFO_DOI_PREFIX).append(possibleArticleDOI)
-                .append('#').append(doi.replaceAll(figureAnchorRegEx.pattern(),"$1").replaceAll("\\.","-"));
+                .append('#').append(
+                    //remove everything but the figure anchor id
+                    //e.g. 10.1371/journal.pone.001234.g002 => pone-001234-g001
+                    doi.substring(doi.length() - REP_ANCHOR_LENGTH).replaceAll("\\.", "-")
+                );
           }
 
           log.debug("Matched: {}; redirecting to: {}", doi, redirectURL);
