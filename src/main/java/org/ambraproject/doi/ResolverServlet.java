@@ -30,10 +30,10 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -73,7 +73,16 @@ public class ResolverServlet extends HttpServlet {
   private Pattern[] repRegExs;
   private String[] urls;
   private int numJournals;
-  private String errorPage;
+  private String defaultErrorPage;
+  private String pbioErrorPage;
+  private String pcbiErrorPage;
+  private String pctrErrorPage;
+  private String pgenErrorPage;
+  private String pmedErrorPage;
+  private String pntdErrorPage;
+  private String poneErrorPage;
+  private String ppatErrorPage;
+  private String pcolErrorPage;
 
   private ResolverDAOService resolverDAOService;
 
@@ -104,8 +113,18 @@ public class ResolverServlet extends HttpServlet {
       repRegExs[i] = Pattern.compile(pat.toString());
 
     }
-    errorPage = myConfig.getString("ambra.platform.webserverUrl") +
-        myConfig.getString("ambra.platform.errorPage");
+    defaultErrorPage = myConfig.getString("ambra.platform.webserverUrl") +
+        myConfig.getString("ambra.platform.defaultErrorPage");
+
+    pbioErrorPage = myConfig.getString("ambra.platform.pbioErrorPage");
+    pcbiErrorPage = myConfig.getString("ambra.platform.pcbiErrorPage");
+    pctrErrorPage = myConfig.getString("ambra.platform.pctrErrorPage");
+    pgenErrorPage = myConfig.getString("ambra.platform.pgenErrorPage");
+    pmedErrorPage = myConfig.getString("ambra.platform.pmedErrorPage");
+    pntdErrorPage = myConfig.getString("ambra.platform.pntdErrorPage");
+    poneErrorPage = myConfig.getString("ambra.platform.poneErrorPage");
+    ppatErrorPage = myConfig.getString("ambra.platform.ppatErrorPage");
+    pcolErrorPage = myConfig.getString("ambra.platform.pcolErrorPage");
 
     if (log.isTraceEnabled()) {
       for (int i = 0; i < numJournals; i++) {
@@ -113,7 +132,7 @@ public class ResolverServlet extends HttpServlet {
             figureRegExs[i].toString() + "  ; url: " + urls[i]);
       }
 
-      log.trace(("Error Page is: " + errorPage));
+      log.trace(("Default Error Page is: " + defaultErrorPage));
     }
   }
 
@@ -146,7 +165,7 @@ public class ResolverServlet extends HttpServlet {
     }
 
     try {
-      String redirectURL = constructURL(doi);
+      String redirectURL = constructURL(doi, req);
 
       log.debug("DOI ResolverServlet sending redirect to URL: {}", redirectURL);
 
@@ -167,7 +186,7 @@ public class ResolverServlet extends HttpServlet {
     failWithError(resp);
   }
 
-  private String constructURL(String doi) {
+  private String constructURL(String doi, HttpServletRequest req) {
     StringBuilder redirectURL;
 
     Pattern journalRegEx;
@@ -290,11 +309,11 @@ public class ResolverServlet extends HttpServlet {
       } else {
         //doi wasn't in the annotation table
         log.info("Could not resolve uri {} to an annotation", fullDoi);
-        return errorPage;
+        return showErrorPage(req);
       }
     } catch (Exception e) {
       log.error("Error resolving " + fullDoi + " to an annotation", e);
-      return errorPage;
+      return showErrorPage(req);
     }
   }
 
@@ -333,9 +352,45 @@ public class ResolverServlet extends HttpServlet {
     return null;
   }
 
+  /**
+   * Show the journal specific error page.
+   * If request is like:http://dx.plos.org/10.1371/journal.pgen.100099999, show genetics error page
+   * If request is like: http://dx.plos.org/pgen-hello?something, show genetics error page
+   * If request is like: http://dx.plos.org/pbio/pgen/ppat?something. show biology or genetics or pathogens error page
+   * @param req
+   * @return
+   */
+  private String showErrorPage(HttpServletRequest req) {
+    
+    String reqString = req.getPathInfo();
+    String[] wordsInReq = reqString.split("[\\p{Punct}\\s]+");
+    List<String> wordsInReqList = Arrays.asList(wordsInReq);
+    if(wordsInReqList.contains("pbio")) {
+      return pbioErrorPage;
+    } else if(wordsInReqList.contains("pcbi")) {
+      return pcbiErrorPage;
+    } else if(wordsInReqList.contains("pctr")) {
+      return pctrErrorPage;
+    } else if(wordsInReqList.contains("pgen")) {
+      return pgenErrorPage;
+    } else if(wordsInReqList.contains("pmed")) {
+      return pmedErrorPage;
+    } else if(wordsInReqList.contains("pntd")) {
+      return pntdErrorPage;
+    } else if(wordsInReqList.contains("pone")) {
+      return poneErrorPage;
+    } else if(wordsInReqList.contains("ppat")) {
+      return ppatErrorPage;
+    } else if(wordsInReqList.contains("pcol")) {
+      return pcolErrorPage;
+    } else {
+      return defaultErrorPage;
+    }
+  }
+
   private void failWithError(HttpServletResponse resp) {
     try {
-      resp.sendRedirect(errorPage);
+      resp.sendRedirect(defaultErrorPage);
     } catch (Exception e) {
       log.warn("Couldn't redirect user to error page", e);
     }
