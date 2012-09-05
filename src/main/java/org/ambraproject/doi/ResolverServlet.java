@@ -32,8 +32,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.Arrays;
-import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -74,7 +72,7 @@ public class ResolverServlet extends HttpServlet {
   private String[] urls;
   private int numJournals;
   private String defaultErrorPage;
-  private String pbioErrorPage;
+  /*private String pbioErrorPage;
   private String pcbiErrorPage;
   private String pctrErrorPage;
   private String pgenErrorPage;
@@ -82,7 +80,8 @@ public class ResolverServlet extends HttpServlet {
   private String pntdErrorPage;
   private String poneErrorPage;
   private String ppatErrorPage;
-  private String pcolErrorPage;
+  private String pcolErrorPage;*/
+  private String[] errorPages;
 
   private ResolverDAOService resolverDAOService;
 
@@ -96,6 +95,7 @@ public class ResolverServlet extends HttpServlet {
     figureRegExs = new Pattern[numJournals];
     journalRegExs = new Pattern[numJournals];
     repRegExs = new Pattern[numJournals];
+    errorPages = new String[numJournals];
 
     for (int i = 0; i < numJournals; i++) {
       urls[i] = myConfig.getString("ambra.services.doiResolver.mappings.journalMapping(" + i + ").url");
@@ -111,20 +111,12 @@ public class ResolverServlet extends HttpServlet {
       pat = new StringBuilder("/").append(myConfig.
           getString("ambra.services.doiResolver.mappings.journalMapping(" + i + ").repRegex"));
       repRegExs[i] = Pattern.compile(pat.toString());
+      
+      errorPages[i] = myConfig.getString("ambra.services.doiResolver.mappings.journalMapping(" + i + ").errorPage");
 
     }
     defaultErrorPage = myConfig.getString("ambra.platform.webserverUrl") +
         myConfig.getString("ambra.platform.defaultErrorPage");
-
-    pbioErrorPage = myConfig.getString("ambra.platform.pbioErrorPage");
-    pcbiErrorPage = myConfig.getString("ambra.platform.pcbiErrorPage");
-    pctrErrorPage = myConfig.getString("ambra.platform.pctrErrorPage");
-    pgenErrorPage = myConfig.getString("ambra.platform.pgenErrorPage");
-    pmedErrorPage = myConfig.getString("ambra.platform.pmedErrorPage");
-    pntdErrorPage = myConfig.getString("ambra.platform.pntdErrorPage");
-    poneErrorPage = myConfig.getString("ambra.platform.poneErrorPage");
-    ppatErrorPage = myConfig.getString("ambra.platform.ppatErrorPage");
-    pcolErrorPage = myConfig.getString("ambra.platform.pcolErrorPage");
 
     if (log.isTraceEnabled()) {
       for (int i = 0; i < numJournals; i++) {
@@ -309,11 +301,11 @@ public class ResolverServlet extends HttpServlet {
       } else {
         //doi wasn't in the annotation table
         log.info("Could not resolve uri {} to an annotation", fullDoi);
-        return showErrorPage(req);
+        return showErrorPage(doi);
       }
     } catch (Exception e) {
       log.error("Error resolving " + fullDoi + " to an annotation", e);
-      return showErrorPage(req);
+      return showErrorPage(doi);
     }
   }
 
@@ -357,35 +349,21 @@ public class ResolverServlet extends HttpServlet {
    * If request is like:http://dx.plos.org/10.1371/journal.pgen.100099999, show genetics error page
    * If request is like: http://dx.plos.org/pgen-hello?something, show genetics error page
    * If request is like: http://dx.plos.org/pbio/pgen/ppat?something. show biology or genetics or pathogens error page
-   * @param req
+   * @param doi
    * @return
    */
-  private String showErrorPage(HttpServletRequest req) {
-    
-    String reqString = req.getPathInfo();
-    String[] wordsInReq = reqString.split("[\\p{Punct}\\s]+");
-    List<String> wordsInReqList = Arrays.asList(wordsInReq);
-    if(wordsInReqList.contains("pbio")) {
-      return pbioErrorPage;
-    } else if(wordsInReqList.contains("pcbi")) {
-      return pcbiErrorPage;
-    } else if(wordsInReqList.contains("pctr")) {
-      return pctrErrorPage;
-    } else if(wordsInReqList.contains("pgen")) {
-      return pgenErrorPage;
-    } else if(wordsInReqList.contains("pmed")) {
-      return pmedErrorPage;
-    } else if(wordsInReqList.contains("pntd")) {
-      return pntdErrorPage;
-    } else if(wordsInReqList.contains("pone")) {
-      return poneErrorPage;
-    } else if(wordsInReqList.contains("ppat")) {
-      return ppatErrorPage;
-    } else if(wordsInReqList.contains("pcol")) {
-      return pcolErrorPage;
-    } else {
-      return defaultErrorPage;
+  private String showErrorPage(String doi) {
+    if (doi.startsWith(INFO_DOI_PREFIX)) {
+      doi = doi.substring(INFO_DOI_PREFIX.length());
     }
+
+    for (int i = 0; i < numJournals; i++) {
+      if (journalRegExs[i].matcher(doi).matches()) {
+        return errorPages[i];
+      }
+    }
+
+    return defaultErrorPage;
   }
 
   private void failWithError(HttpServletResponse resp) {
