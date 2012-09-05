@@ -72,15 +72,6 @@ public class ResolverServlet extends HttpServlet {
   private String[] urls;
   private int numJournals;
   private String defaultErrorPage;
-  /*private String pbioErrorPage;
-  private String pcbiErrorPage;
-  private String pctrErrorPage;
-  private String pgenErrorPage;
-  private String pmedErrorPage;
-  private String pntdErrorPage;
-  private String poneErrorPage;
-  private String ppatErrorPage;
-  private String pcolErrorPage;*/
   private String[] errorPages;
 
   private ResolverDAOService resolverDAOService;
