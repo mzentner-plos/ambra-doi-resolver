@@ -56,6 +56,7 @@ public class ResolverServlet extends HttpServlet {
   private static final Logger log = LoggerFactory.getLogger(ResolverServlet.class);
   private static final Configuration myConfig = ConfigurationStore.getInstance().getConfiguration();
   private static final String INFO_DOI_PREFIX = myConfig.getString("ambra.aliases.doiPrefix");
+  private static final String HTTP_HEADER_REFERRER = "Referer";
   /**
    * Length of the part of the doi that composes the representation anchor id. e.g. pone.0035480.t001.
    */
@@ -149,8 +150,13 @@ public class ResolverServlet extends HttpServlet {
 
     try {
       String redirectURL = constructURL(doi, req);
+      String referrer = req.getHeader(HTTP_HEADER_REFERRER);
 
       log.debug("DOI ResolverServlet sending redirect to URL: {}", redirectURL);
+
+      if(referrer != null) {
+        resp.setHeader(HTTP_HEADER_REFERRER,referrer);
+      }
 
       resp.sendRedirect(redirectURL);
     } catch (Exception e) {
