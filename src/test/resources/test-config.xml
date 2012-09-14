@@ -25,7 +25,7 @@
   <ambra>
     <platform>
       <webserverUrl>http://ambrajournal.example.org/</webserverUrl>
-      <errorPage>static/pageNotFound.action</errorPage>
+      <defaultErrorPage>static/pageNotFound.action</defaultErrorPage>
       <guid-prefix>info:doi/10.1371/</guid-prefix>
     </platform>
 
@@ -44,15 +44,17 @@
         <mappings>
           <journalMapping>
             <url>http://ambrajournal.example.org/</url>
-            <regex>10\.1371/ambr\.\d{7}</regex>
+            <regex>.*ambr.*</regex>
             <figureRegex>10\.1371/ambr\.\d{7}\.[gt]\d{3}</figureRegex>
             <repRegex>10\.1371/ambr\.\d{7}\.(pdf|xml)</repRegex>
+            <errorPage>http://ambrajournal.example.org/static/pageNotFound.action</errorPage>
           </journalMapping>
           <journalMapping>
             <url>http://overlayjournal.example.org/</url>
-            <regex>10\.1371/ovrj\.(\d{7}|v\d\d\.i\d\d)</regex>
+            <regex>.*ovrj.*</regex>
             <figureRegex>10\.1371/ovrj\.(\d{7}|v\d\d\.i\d\d)\.[gt]\d{3}</figureRegex>
             <repRegex>10\.1371/ovrj\.\d{7}\.(pdf|xml)</repRegex>
+            <errorPage>http://ambrajournal.example.org/static/pageNotFound.action</errorPage>
           </journalMapping>
         </mappings>
       </doiResolver>

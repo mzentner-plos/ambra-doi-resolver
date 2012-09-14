@@ -30,8 +30,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.regex.Pattern;
@@ -58,6 +56,7 @@ public class ResolverServlet extends HttpServlet {
   private static final Logger log = LoggerFactory.getLogger(ResolverServlet.class);
   private static final Configuration myConfig = ConfigurationStore.getInstance().getConfiguration();
   private static final String INFO_DOI_PREFIX = myConfig.getString("ambra.aliases.doiPrefix");
+  private static final String HTTP_HEADER_REFERRER = "Referer";
   /**
    * Length of the part of the doi that composes the representation anchor id. e.g. pone.0035480.t001.
    */
@@ -73,7 +72,8 @@ public class ResolverServlet extends HttpServlet {
   private Pattern[] repRegExs;
   private String[] urls;
   private int numJournals;
-  private String errorPage;
+  private String defaultErrorPage;
+  private String[] errorPages;
 
   private ResolverDAOService resolverDAOService;
 
@@ -87,6 +87,7 @@ public class ResolverServlet extends HttpServlet {
     figureRegExs = new Pattern[numJournals];
     journalRegExs = new Pattern[numJournals];
     repRegExs = new Pattern[numJournals];
+    errorPages = new String[numJournals];
 
     for (int i = 0; i < numJournals; i++) {
       urls[i] = myConfig.getString("ambra.services.doiResolver.mappings.journalMapping(" + i + ").url");
@@ -102,10 +103,12 @@ public class ResolverServlet extends HttpServlet {
       pat = new StringBuilder("/").append(myConfig.
           getString("ambra.services.doiResolver.mappings.journalMapping(" + i + ").repRegex"));
       repRegExs[i] = Pattern.compile(pat.toString());
+      
+      errorPages[i] = myConfig.getString("ambra.services.doiResolver.mappings.journalMapping(" + i + ").errorPage");
 
     }
-    errorPage = myConfig.getString("ambra.platform.webserverUrl") +
-        myConfig.getString("ambra.platform.errorPage");
+    defaultErrorPage = myConfig.getString("ambra.platform.webserverUrl") +
+        myConfig.getString("ambra.platform.defaultErrorPage");
 
     if (log.isTraceEnabled()) {
       for (int i = 0; i < numJournals; i++) {
@@ -113,7 +116,7 @@ public class ResolverServlet extends HttpServlet {
             figureRegExs[i].toString() + "  ; url: " + urls[i]);
       }
 
-      log.trace(("Error Page is: " + errorPage));
+      log.trace(("Default Error Page is: " + defaultErrorPage));
     }
   }
 
@@ -146,9 +149,14 @@ public class ResolverServlet extends HttpServlet {
     }
 
     try {
-      String redirectURL = constructURL(doi);
+      String redirectURL = constructURL(doi, req);
+      String referrer = req.getHeader(HTTP_HEADER_REFERRER);
 
       log.debug("DOI ResolverServlet sending redirect to URL: {}", redirectURL);
+
+      if(referrer != null) {
+        resp.setHeader(HTTP_HEADER_REFERRER,referrer);
+      }
 
       resp.sendRedirect(redirectURL);
     } catch (Exception e) {
@@ -167,7 +175,7 @@ public class ResolverServlet extends HttpServlet {
     failWithError(resp);
   }
 
-  private String constructURL(String doi) {
+  private String constructURL(String doi, HttpServletRequest req) {
     StringBuilder redirectURL;
 
     Pattern journalRegEx;
@@ -290,11 +298,11 @@ public class ResolverServlet extends HttpServlet {
       } else {
         //doi wasn't in the annotation table
         log.info("Could not resolve uri {} to an annotation", fullDoi);
-        return errorPage;
+        return showErrorPage(doi);
       }
     } catch (Exception e) {
       log.error("Error resolving " + fullDoi + " to an annotation", e);
-      return errorPage;
+      return showErrorPage(doi);
     }
   }
 
@@ -333,9 +341,31 @@ public class ResolverServlet extends HttpServlet {
     return null;
   }
 
+  /**
+   * Show the journal specific error page.
+   * If request is like:http://dx.plos.org/10.1371/journal.pgen.100099999, show genetics error page
+   * If request is like: http://dx.plos.org/pgen-hello?something, show genetics error page
+   * If request is like: http://dx.plos.org/pbio/pgen/ppat?something. show biology or genetics or pathogens error page
+   * @param doi
+   * @return
+   */
+  private String showErrorPage(String doi) {
+    if (doi.startsWith(INFO_DOI_PREFIX)) {
+      doi = doi.substring(INFO_DOI_PREFIX.length());
+    }
+
+    for (int i = 0; i < numJournals; i++) {
+      if (journalRegExs[i].matcher(doi).matches()) {
+        return errorPages[i];
+      }
+    }
+
+    return defaultErrorPage;
+  }
+
   private void failWithError(HttpServletResponse resp) {
     try {
-      resp.sendRedirect(errorPage);
+      resp.sendRedirect(defaultErrorPage);
     } catch (Exception e) {
       log.warn("Couldn't redirect user to error page", e);
     }

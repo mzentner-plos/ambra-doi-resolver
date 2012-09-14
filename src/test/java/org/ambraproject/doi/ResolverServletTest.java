@@ -41,6 +41,7 @@ public class ResolverServletTest extends BaseResolverTest {
   private static final String ERROR_PAGE = "http://ambrajournal.example.org/static/pageNotFound.action";
   private static final String FIRST_JOURNAL_URL = "http://ambrajournal.example.org/";
   private static final String SECOND_JOURNAL_URL = "http://overlayjournal.example.org/";
+  private static final String HTTP_HEADER_REFERRER = "Referer";
 
   private ResolverServlet resolverServlet;
 
@@ -66,12 +67,14 @@ public class ResolverServletTest extends BaseResolverTest {
     insertAnnotationRow(102, "info:doi/10.1371/test-rating", 101, "Rating");
 
     MockHttpServletRequest article1 = new MockHttpServletRequest();
+    article1.addHeader(HTTP_HEADER_REFERRER, "http://test.referral.com/test");
     article1.setPathInfo("/10.1371/ambr.1234567");
 
     MockHttpServletRequest encodedArticle1 = new MockHttpServletRequest();
     encodedArticle1.setPathInfo("%2F10.1371%2Fambr.1234567");
 
     MockHttpServletRequest article2 = new MockHttpServletRequest();
+    article2.addHeader(HTTP_HEADER_REFERRER, "http://test2.referral2.com/test2");
     article2.setPathInfo("%2F10.1371%2Fovrj.v06.i09");
 
     MockHttpServletRequest figure = new MockHttpServletRequest();
@@ -87,21 +90,24 @@ public class ResolverServletTest extends BaseResolverTest {
     rating.setPathInfo("%2F10.1371%2Ftest-rating");
 
     return new Object[][]{
-        {article1, FIRST_JOURNAL_URL + "article/info%3Adoi%2F10.1371%2Fambr.1234567"},
-        {encodedArticle1, FIRST_JOURNAL_URL + "article/info%3Adoi%2F10.1371%2Fambr.1234567"},
-        {figure, FIRST_JOURNAL_URL + "article/info%3Adoi%2F10.1371%2Fambr.1234567#ambr-1234567-g001"},
-        {article2, SECOND_JOURNAL_URL + "article/info%3Adoi%2F10.1371%2Fovrj.v06.i09"},
+        {article1, FIRST_JOURNAL_URL + "article/info%3Adoi%2F10.1371%2Fambr.1234567", "http://test.referral.com/test"},
+        {encodedArticle1, FIRST_JOURNAL_URL + "article/info%3Adoi%2F10.1371%2Fambr.1234567", null},
+        {figure, FIRST_JOURNAL_URL + "article/info%3Adoi%2F10.1371%2Fambr.1234567#ambr-1234567-g001", null},
+        {article2, SECOND_JOURNAL_URL + "article/info%3Adoi%2F10.1371%2Fovrj.v06.i09",
+          "http://test2.referral2.com/test2"},
         {representation, SECOND_JOURNAL_URL + "article/fetchObjectAttachment.action?" +
-            "uri=info%3Adoi%2F10.1371%2Fovrj.1234567&representation=PDF"},
-        {annotation, SECOND_JOURNAL_URL + "annotation/listThread.action?root=101"},
-        {rating, FIRST_JOURNAL_URL + "rate/getArticleRatings.action?articleURI=info:doi/10.1371/ambr.1234567#102" }
+            "uri=info%3Adoi%2F10.1371%2Fovrj.1234567&representation=PDF", null},
+        {annotation, SECOND_JOURNAL_URL + "annotation/listThread.action?root=101", null},
+        {rating, FIRST_JOURNAL_URL + "rate/getArticleRatings.action?articleURI=info:doi/10.1371/ambr.1234567#102", null}
     };
   }
 
   @Test(dataProvider = "dois")
-  public void testDoGet(HttpServletRequest request, String expectedRedirect) {
+  public void testDoGet(HttpServletRequest request, String expectedRedirect, String expectedReferral) {
     MockHttpServletResponse response = new MockHttpServletResponse();
     resolverServlet.doGet(request, response);
+
+    assertEquals(response.getHeader(HTTP_HEADER_REFERRER), expectedReferral, "referral did not match");
     assertEquals(response.getRedirectedUrl(), expectedRedirect, "servlet didn't redirect correctly");
   }
 
