@@ -62,7 +62,6 @@
     <network>
       <platform>
         <annotationAction>annotation/listThread.action?inReplyTo=%ID%</annotationAction>
-        <ratingAction>rate/getArticleRatings.action?articleURI=%DOI%#%ID%</ratingAction>
       </platform>
     </network>
   </ambra>
