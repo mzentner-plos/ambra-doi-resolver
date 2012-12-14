@@ -85,6 +85,9 @@ public class ResolverServletTest extends BaseResolverTest {
     MockHttpServletRequest annotation = new MockHttpServletRequest();
     annotation.setPathInfo("%2F10.1371%2Ftest-annotation");
 
+    MockHttpServletRequest suppInfo = new MockHttpServletRequest();
+    suppInfo.setPathInfo("%2F10.1371%2Fovrj.1234567.s001");
+
     return new Object[][]{
         {article1, FIRST_JOURNAL_URL + "article/info%3Adoi%2F10.1371%2Fambr.1234567", "http://test.referral.com/test"},
         {encodedArticle1, FIRST_JOURNAL_URL + "article/info%3Adoi%2F10.1371%2Fambr.1234567", null},
@@ -93,7 +96,9 @@ public class ResolverServletTest extends BaseResolverTest {
           "http://test2.referral2.com/test2"},
         {representation, SECOND_JOURNAL_URL + "article/fetchObjectAttachment.action?" +
             "uri=info%3Adoi%2F10.1371%2Fovrj.1234567&representation=PDF", null},
-        {annotation, SECOND_JOURNAL_URL + "annotation/listThread.action?root=101", null}
+        {annotation, SECOND_JOURNAL_URL + "annotation/listThread.action?root=101", null},
+        {suppInfo, SECOND_JOURNAL_URL + "article/fetchSingleRepresentation.action?" +
+            "uri=info%3Adoi%2F10.1371%2Fovrj.1234567.s001", null},
     };
   }
 

@@ -70,6 +70,7 @@ public class ResolverServlet extends HttpServlet {
   private Pattern[] journalRegExs;
   private Pattern[] figureRegExs;
   private Pattern[] repRegExs;
+  private Pattern[] suppInfoRegExs;
   private String[] urls;
   private int numJournals;
   private String defaultErrorPage;
@@ -87,6 +88,7 @@ public class ResolverServlet extends HttpServlet {
     figureRegExs = new Pattern[numJournals];
     journalRegExs = new Pattern[numJournals];
     repRegExs = new Pattern[numJournals];
+    suppInfoRegExs = new Pattern[numJournals];
     errorPages = new String[numJournals];
 
     for (int i = 0; i < numJournals; i++) {
@@ -103,6 +105,10 @@ public class ResolverServlet extends HttpServlet {
       pat = new StringBuilder("/").append(myConfig.
           getString("ambra.services.doiResolver.mappings.journalMapping(" + i + ").repRegex"));
       repRegExs[i] = Pattern.compile(pat.toString());
+
+      pat = new StringBuilder("/").append(myConfig.
+          getString("ambra.services.doiResolver.mappings.journalMapping(" + i + ").suppInfoRegex"));
+      suppInfoRegExs[i] = Pattern.compile(pat.toString());
       
       errorPages[i] = myConfig.getString("ambra.services.doiResolver.mappings.journalMapping(" + i + ").errorPage");
 
@@ -181,12 +187,15 @@ public class ResolverServlet extends HttpServlet {
     Pattern journalRegEx;
     Pattern figureRegEx;
     Pattern repRegEx;
+    Pattern suppInfoRegEx;
 
-    //use regexes to check for each journal if the doi is an article, figure, or representation from that journal
+    //use regexes to check for each journal if the doi is an article, figure, representation or supp info from that 
+    // journal
     for (int i = 0; i < numJournals; i++) {
       journalRegEx = journalRegExs[i];
       figureRegEx = figureRegExs[i];
       repRegEx = repRegExs[i];
+      suppInfoRegEx = suppInfoRegExs[i];
 
       if (journalRegEx.matcher(doi).matches()) {
 
@@ -267,6 +276,34 @@ public class ResolverServlet extends HttpServlet {
                 append(URLEncoder.encode(INFO_DOI_PREFIX)).append(URLEncoder.encode(possibleArticleDOI)).
                 append("&").append(URLEncoder.encode("representation")).append("=").
                 append(URLEncoder.encode(representation));
+          }
+
+          log.debug("Matched: {}; redirecting to: {}", doi, redirectURL);
+
+          return redirectURL.toString();
+        }
+      }
+
+      if (suppInfoRegEx.matcher(doi).matches()) {
+        // example doi string
+        // 10.1371/journal.pone.0050997.s001
+        int index = doi.lastIndexOf(".");
+        String possibleArticleDOI = doi.substring(0, index);
+
+        if (doiIsArticle(possibleArticleDOI)) {
+          redirectURL = new StringBuilder(urls[i]);
+
+          try {
+            // example url
+            // plosone.org/article/fetchSingleRepresentation.action?uri=info%3Adoi%2F10.1371%2Fjournal.pone.0050997.s001
+            redirectURL.append(myConfig.getString("ambra.platform.fetchSingleRepresentation")).
+                append(URLEncoder.encode(INFO_DOI_PREFIX, "UTF-8")).
+                append(URLEncoder.encode(doi, "UTF-8"));
+          } catch (UnsupportedEncodingException uee) {
+            log.debug("Couldn't encode URL with UTF-8 encoding", uee);
+
+            redirectURL.append(myConfig.getString("ambra.platform.fetchSingleRepresentation")).
+                append(URLEncoder.encode(INFO_DOI_PREFIX)).append(URLEncoder.encode(doi));
           }
 
           log.debug("Matched: {}; redirecting to: {}", doi, redirectURL);
