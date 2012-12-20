@@ -64,7 +64,6 @@ public class ResolverServletTest extends BaseResolverTest {
     insertArticleRow(102, "info:doi/10.1371/ovrj.v06.i09");
     insertArticleRow(103, "info:doi/10.1371/ovrj.1234567");
     insertAnnotationRow(101, "info:doi/10.1371/test-annotation", 103, "Reply");
-    insertAnnotationRow(102, "info:doi/10.1371/test-rating", 101, "Rating");
 
     MockHttpServletRequest article1 = new MockHttpServletRequest();
     article1.addHeader(HTTP_HEADER_REFERRER, "http://test.referral.com/test");
@@ -86,8 +85,8 @@ public class ResolverServletTest extends BaseResolverTest {
     MockHttpServletRequest annotation = new MockHttpServletRequest();
     annotation.setPathInfo("%2F10.1371%2Ftest-annotation");
 
-    MockHttpServletRequest rating = new MockHttpServletRequest();
-    rating.setPathInfo("%2F10.1371%2Ftest-rating");
+    MockHttpServletRequest suppInfo = new MockHttpServletRequest();
+    suppInfo.setPathInfo("%2F10.1371%2Fovrj.1234567.s001");
 
     return new Object[][]{
         {article1, FIRST_JOURNAL_URL + "article/info%3Adoi%2F10.1371%2Fambr.1234567", "http://test.referral.com/test"},
@@ -98,7 +97,8 @@ public class ResolverServletTest extends BaseResolverTest {
         {representation, SECOND_JOURNAL_URL + "article/fetchObjectAttachment.action?" +
             "uri=info%3Adoi%2F10.1371%2Fovrj.1234567&representation=PDF", null},
         {annotation, SECOND_JOURNAL_URL + "annotation/listThread.action?root=101", null},
-        {rating, FIRST_JOURNAL_URL + "rate/getArticleRatings.action?articleURI=info:doi/10.1371/ambr.1234567#102", null}
+        {suppInfo, SECOND_JOURNAL_URL + "article/fetchSingleRepresentation.action?" +
+            "uri=info%3Adoi%2F10.1371%2Fovrj.1234567.s001", null},
     };
   }
 

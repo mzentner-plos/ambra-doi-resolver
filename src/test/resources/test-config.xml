@@ -47,6 +47,7 @@
             <regex>.*ambr.*</regex>
             <figureRegex>10\.1371/ambr\.\d{7}\.[gt]\d{3}</figureRegex>
             <repRegex>10\.1371/ambr\.\d{7}\.(pdf|xml)</repRegex>
+            <suppInfoRegex>10\.1371/ambr\.\d{7}\.s.+</suppInfoRegex>
             <errorPage>http://ambrajournal.example.org/static/pageNotFound.action</errorPage>
           </journalMapping>
           <journalMapping>
@@ -54,6 +55,7 @@
             <regex>.*ovrj.*</regex>
             <figureRegex>10\.1371/ovrj\.(\d{7}|v\d\d\.i\d\d)\.[gt]\d{3}</figureRegex>
             <repRegex>10\.1371/ovrj\.\d{7}\.(pdf|xml)</repRegex>
+            <suppInfoRegex>10\.1371/ovrj\.\d{7}\.s.+</suppInfoRegex>
             <errorPage>http://ambrajournal.example.org/static/pageNotFound.action</errorPage>
           </journalMapping>
         </mappings>
@@ -62,7 +64,6 @@
     <network>
       <platform>
         <annotationAction>annotation/listThread.action?inReplyTo=%ID%</annotationAction>
-        <ratingAction>rate/getArticleRatings.action?articleURI=%DOI%#%ID%</ratingAction>
       </platform>
     </network>
   </ambra>
